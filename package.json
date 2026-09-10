@@ -1,0 +1,19 @@
+{
+  "name": "trazeiq",
+  "version": "0.1.0",
+  "description": "TrazeIQ error-monitoring SDK — thin isomorphic wrapper over POST /api/v1/events/. Node 18+ and browsers, zero dependencies.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/sdk.test.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["trazeiq", "error-monitoring", "observability"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
