@@ -227,20 +227,46 @@ export function captureException(
 }
 
 /**
- * Wrap an async function so rejections are reported before re-throwing.
+ * Wrap a function so errors are reported before re-throwing.
  * TrazeIQ observes — it never swallows.
+ *
+ * Works with both sync and async functions: a sync throw stays
+ * synchronous (reported fire-and-forget), an async rejection stays a
+ * rejection (reported before re-throwing). Do not pass a sync function
+ * where only a promise-returning one is expected — the wrapper preserves
+ * the wrapped function's sync/async nature.
  */
 export function wrap<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
+  opts?: TrazeCaptureOptions,
+): (...args: TArgs) => Promise<TReturn>;
+export function wrap<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
+  opts?: TrazeCaptureOptions,
+): (...args: TArgs) => TReturn | Promise<TReturn>;
+export function wrap<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn | Promise<TReturn>,
   opts: TrazeCaptureOptions = {},
-): (...args: TArgs) => Promise<TReturn> {
-  return async (...args: TArgs): Promise<TReturn> => {
+): (...args: TArgs) => TReturn | Promise<TReturn> {
+  return (...args: TArgs): TReturn | Promise<TReturn> => {
+    let result: TReturn | Promise<TReturn>;
     try {
-      return await fn(...args);
+      result = fn(...args);
     } catch (error) {
-      await captureException(error, opts);
+      // Sync throw: report fire-and-forget (never blocks the throw) and
+      // re-throw synchronously so callers without await still see it.
+      void captureException(error, opts);
       throw error;
     }
+    if (result instanceof Promise) {
+      return result.catch((error: unknown) => {
+        // Async rejection: report, then re-throw as a rejection.
+        return captureException(error, opts).then(() => {
+          throw error;
+        });
+      });
+    }
+    return result;
   };
 }
 

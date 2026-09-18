@@ -41,7 +41,7 @@ await captureMessage("Cache hit ratio dropped below 80%", {
 | `init({apiKey, endpoint?, environment?, service?, defaultMetadata?, timeoutMs?, enabled?})` | Configure. Throws only when `apiKey` is missing. |
 | `captureMessage(message, opts?)` | Send a string event. No-op on empty message. |
 | `captureException(error, opts?)` | Send an `Error` (extracts `message` + `stack`). Accepts anything; `null` is a no-op. |
-| `wrap(fn, opts?)` | Wrap an async fn: reports rejections, then re-throws. |
+| `wrap(fn, opts?)` | Wrap any fn (sync or async): reports errors, then re-throws. Sync throws stay synchronous, async rejections stay async. |
 | `setUser(id \| null)` | Stamp `user_id` on subsequent events. |
 | `addBreadcrumb(crumb)` / `clearBreadcrumbs()` | Buffer context (kept max 50, sent as `breadcrumbs`). |
 | `flush()` | No-op (sends are immediate), kept for API compatibility. |

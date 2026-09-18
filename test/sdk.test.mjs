@@ -135,3 +135,25 @@ test("close disables the client; wrap rethrows after reporting", async () => {
     live.server.close();
   }
 });
+
+test("wrap keeps sync throws synchronous while still reporting", async () => {
+  __resetForTests();
+  const { server, requests, port } = await startCaptureServer();
+  try {
+    init({ apiKey: "k", endpoint: `http://127.0.0.1:${port}` });
+    const failingSync = wrap(() => {
+      throw new Error("sync-boom");
+    });
+    // A sync throw must stay synchronous — callers without await see it.
+    assert.throws(() => failingSync(), /sync-boom/);
+    // The report is fire-and-forget; allow the event loop to deliver it.
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(requests.length, 1);
+    assert.match(JSON.parse(requests[0].body).message, /sync-boom/);
+
+    const passingSync = wrap((a, b) => a + b);
+    assert.equal(passingSync(2, 3), 5);
+  } finally {
+    server.close();
+  }
+});
